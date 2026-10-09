@@ -4,9 +4,9 @@
 
 <br/>
 
-[![Última versión](https://img.shields.io/github/v/release/sam-wilkie/kiro-watch?style=flat-square&color=2f8fff)](https://github.com/sam-wilkie/kiro-watch/releases/latest)
-[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-5ed6ff?style=flat-square)](LICENSE)
-[![views](https://hits.sh/github.com/sam-wilkie/kiro-watch.svg?style=flat-square&color=0d1420&labelColor=132033)](https://hits.sh/github.com/sam-wilkie/kiro-watch/)
+[![Última versión](https://img.shields.io/github/v/release/sam-wilkie/kiro-watch?style=flat-square&color=FF0000&labelColor=000000)](https://github.com/sam-wilkie/kiro-watch/releases/latest)
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-3a3a3a?style=flat-square&labelColor=000000)](LICENSE)
+[![views](https://hits.sh/github.com/sam-wilkie/kiro-watch.svg?style=flat-square&color=3a3a3a&labelColor=000000)](https://hits.sh/github.com/sam-wilkie/kiro-watch/)
 
 </div>
 
@@ -132,3 +132,7 @@ python3 -m pytest tests/ -v
 ## `$ cat LICENSE`
 
 MIT. Consultá [LICENSE](LICENSE). Hecho para la comunidad de Kiro.
+
+## `$ whoami`
+
+Hecho por **Sam Wilkie** / WilkieDevs. Más proyectos y contacto en [sam.wilkiedevs.com](https://sam.wilkiedevs.com).
