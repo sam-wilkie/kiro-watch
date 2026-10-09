@@ -75,7 +75,7 @@ Reiniciá tu sesión de `kiro-cli chat` (o dejá que el hot-reload lo levante) y
 
 Kiro llama a la herramienta `watch_video`, lee los frames que devuelve y responde.
 
-## `$ ./margarita --preview`
+## `$ ./watch --casos`
 
 | **Un video de YouTube** | **Un video sin audio** |
 | :--- | :--- |
