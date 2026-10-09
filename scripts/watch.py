@@ -164,7 +164,36 @@ def extract_frames(
 # --- Transcript --------------------------------------------------------------
 
 
-def extract_audio(video_path: Path, out_dir: Path) -> Path:
+def has_audio_stream(video_path: Path) -> bool:
+    """Return True if the video has at least one audio stream."""
+    try:
+        out = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-select_streams",
+                "a",
+                "-show_entries",
+                "stream=index",
+                "-of",
+                "csv=p=0",
+                str(video_path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return bool(out.stdout.strip())
+    except Exception:
+        return False
+
+
+def extract_audio(video_path: Path, out_dir: Path) -> Path | None:
+    """Extract mono 16kHz audio, or return None if the video has no audio."""
+    if not has_audio_stream(video_path):
+        return None
+
     audio_path = out_dir / "audio.wav"
     cmd = [
         "ffmpeg",
@@ -188,8 +217,11 @@ def is_apple_silicon() -> bool:
     return platform.system() == "Darwin" and platform.machine() == "arm64"
 
 
-def transcribe(audio_path: Path, model: str) -> tuple[str, str]:
+def transcribe(audio_path: Path | None, model: str) -> tuple[str, str]:
     """Return (transcript_text, engine). Tries mlx-whisper then openai-whisper."""
+    if audio_path is None:
+        return "", "none"
+
     # Try mlx-whisper (Apple Silicon, Neural Engine)
     if is_apple_silicon():
         try:
@@ -250,7 +282,8 @@ def watch(
             audio_path = extract_audio(persisted_video, output_dir)
             transcript, transcript_source = transcribe(audio_path, model)
             # Clean up the large wav; we only needed the text.
-            audio_path.unlink(missing_ok=True)
+            if audio_path is not None:
+                audio_path.unlink(missing_ok=True)
 
     return WatchResult(
         source=source,

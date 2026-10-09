@@ -60,3 +60,28 @@ class TestFrameTimestamps:
 class TestAppleSiliconDetection:
     def test_returns_bool(self):
         assert isinstance(pipeline.is_apple_silicon(), bool)
+
+
+class TestHasAudioStream:
+    def test_missing_file_has_no_audio(self, tmp_path):
+        # A path that is not a real media file must not report an audio stream.
+        fake = tmp_path / "nope.mp4"
+        fake.write_bytes(b"not a video")
+        assert pipeline.has_audio_stream(fake) is False
+
+
+class TestExtractAudioNoStream:
+    def test_extract_audio_returns_none_when_no_audio(self, tmp_path, monkeypatch):
+        # When the video has no audio stream, extract_audio must return None
+        # instead of raising, so the pipeline degrades to frames-only.
+        monkeypatch.setattr(pipeline, "has_audio_stream", lambda _p: False)
+        result = pipeline.extract_audio(tmp_path / "video.mp4", tmp_path)
+        assert result is None
+
+
+class TestTranscribeNoAudio:
+    def test_transcribe_none_audio_returns_none_source(self):
+        # Passing None audio (no stream) yields an empty transcript, source "none".
+        text, source = pipeline.transcribe(None, "base")
+        assert text == ""
+        assert source == "none"
