@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "kiro-watch": {
+      "command": "python3",
+      "args": ["/absolute/path/to/kiro-watch/scripts/mcp_server.py"]
+    }
+  }
+}
