@@ -1,47 +1,52 @@
-# kiro-watch
+<div align="center">
 
-**Give the Kiro agent eyes and ears for any video — 100% local, no API key.**
+<img src="assets/banner.svg" alt="kiro-watch — darle ojos y oídos al agente de Kiro para cualquier video" width="100%"/>
 
-Paste a video URL (YouTube, Vimeo, TikTok, X/Twitter, Instagram, Loom, and
-~1800 more via [yt-dlp](https://github.com/yt-dlp/yt-dlp)) or a local file, and
-`kiro-watch` downloads it, extracts frames as images, and transcribes the audio
-locally with Whisper. It then hands Kiro the frame paths and the transcript so
-Kiro reads the frames with its **own** vision and answers questions about the
-video.
+<br/>
 
-## Why this exists
+[![Última versión](https://img.shields.io/github/v/release/sam-wilkie/kiro-watch?style=flat-square&color=2f8fff)](https://github.com/sam-wilkie/kiro-watch/releases/latest)
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-5ed6ff?style=flat-square)](LICENSE)
+[![views](https://hits.sh/github.com/sam-wilkie/kiro-watch.svg?style=flat-square&color=0d1420&labelColor=132033)](https://hits.sh/github.com/sam-wilkie/kiro-watch/)
 
-Kiro can read images natively but has no video input. Most "watch a video"
-tools send the whole file to a paid multimodal API. `kiro-watch` doesn't — it's
-a **perception layer**, not an interpretation layer:
+</div>
+
+Dale **ojos y oídos** al agente de Kiro para cualquier video. Pegás una URL (YouTube, Vimeo, TikTok, X/Twitter, Instagram, Loom y ~1800 sitios más vía [yt-dlp](https://github.com/yt-dlp/yt-dlp)) o un archivo local, y `kiro-watch` baja el video, extrae **fotogramas** como imágenes y **transcribe el audio localmente** con Whisper. Después le entrega a Kiro los frames y la transcripción para que Kiro **vea** los fotogramas con su propia visión multimodal y responda sobre el video.
+
+Todo corre en tu máquina. **Sin API key, sin nube, sin costos.** El modelo que "mira" el video es Kiro mismo.
+
+> [!NOTE]
+> **Por qué existe.** Kiro lee imágenes de forma nativa pero no tiene entrada de video. La mayoría de las herramientas de "ver un video" mandan el archivo entero a una API multimodal paga. `kiro-watch` no: es una **capa de percepción**, no de interpretación. Baja, recorta y transcribe en local, y deja que el agente anfitrión haga el resto.
+
+## `$ cat arquitectura.md`
 
 ```
-video → [yt-dlp] download → [ffmpeg] frames + audio → [whisper] transcript
-      → Kiro reads frames (its own vision) + transcript → answer
+video --> [yt-dlp] descarga --> [ffmpeg] frames + audio --> [whisper] transcripción
+      --> Kiro lee los frames (su propia visión) + la transcripción --> responde
 ```
 
-The model that "watches" the video is Kiro itself. Nothing leaves your machine
-except the original video download. No API key, no cloud inference, no fees.
+1. **yt-dlp** descarga el video (o se usa el archivo local tal cual).
+2. **ffmpeg** extrae fotogramas muestreados como JPEG y, si hay pista de audio, un WAV mono de 16 kHz.
+3. **Whisper** transcribe ese audio en local (`mlx-whisper` en Apple Silicon, `openai-whisper` en CPU). El WAV se borra; solo queda el texto.
+4. **Kiro** recibe las rutas de los frames y la transcripción, lee las imágenes con su visión y responde sobre el video.
 
-## Requirements
-
-- **Python 3.9+**
-- **ffmpeg** and **yt-dlp** (auto-installed on macOS via Homebrew by the setup script)
-- A local Whisper engine (only needed for transcription):
-  - **mlx-whisper** — Apple Silicon, runs on the Neural Engine (preferred on M-series)
-  - **openai-whisper** — CPU fallback (Intel/Linux/Windows)
-
-## Install
+## `$ ./instalar`
 
 ```bash
-git clone https://github.com/<you>/kiro-watch.git
+git clone https://github.com/sam-wilkie/kiro-watch.git
 cd kiro-watch
-python3 scripts/setup.py   # installs ffmpeg, yt-dlp, and the right Whisper engine
+python3 scripts/setup.py   # instala ffmpeg, yt-dlp y el motor Whisper correcto
 ```
 
-## Use it with Kiro (MCP)
+**Requisitos**
+- **Python 3.9+**
+- **ffmpeg** y **yt-dlp** (en macOS los instala el setup vía Homebrew).
+- Un motor Whisper local, solo para transcribir:
+  - **mlx-whisper** — Apple Silicon, corre en el Neural Engine (preferido en M-series).
+  - **openai-whisper** — fallback por CPU (Intel / Linux / Windows).
 
-Register the MCP server globally:
+## `$ ./conectar --kiro`
+
+Registrá el MCP en la config global de Kiro:
 
 ```bash
 kiro-cli mcp add \
@@ -51,62 +56,79 @@ kiro-cli mcp add \
   --scope global
 ```
 
-Or add it by hand to `~/.kiro/settings/mcp.json`:
+O agregalo a mano en `~/.kiro/settings/mcp.json` (ver [examples/mcp.json](examples/mcp.json)):
 
 ```json
 {
   "mcpServers": {
     "kiro-watch": {
       "command": "python3",
-      "args": ["/absolute/path/to/kiro-watch/scripts/mcp_server.py"]
+      "args": ["/ruta/absoluta/a/kiro-watch/scripts/mcp_server.py"]
     }
   }
 }
 ```
 
-Then just ask Kiro:
+Reiniciá tu sesión de `kiro-cli chat` (o dejá que el hot-reload lo levante) y pedile a Kiro:
 
-> watch this video and tell me what happens at 0:30 — https://youtu.be/dQw4w9WgXcQ
+> mirá este video y decime qué pasa en el minuto 0:30 — https://youtu.be/dQw4w9WgXcQ
 
-Kiro calls the `watch_video` tool, reads the returned frames with its vision,
-and answers.
+Kiro llama a la herramienta `watch_video`, lee los frames que devuelve y responde.
 
-## Use it standalone (CLI)
+## `$ ./margarita --preview`
+
+| **Un video de YouTube** | **Un video sin audio** |
+| :--- | :--- |
+| Baja, muestrea frames y transcribe con Whisper. Kiro ve y escucha. | Degrada con gracia: devuelve los frames y `transcript_source: "none"`, sin romperse. |
+| `yt-dlp · ffmpeg · mlx-whisper` | `ffprobe detecta la ausencia de audio` |
+
+| **Fuentes con login** | **Archivo local** |
+| :--- | :--- |
+| Usá `--cookies-from-browser chrome` para Instagram, X y similares. | Pasá una ruta en vez de una URL; se procesa igual. |
+| `yt-dlp · cookies del navegador` | `sin descarga, directo a ffmpeg` |
+
+## `$ ./watch --help`
+
+Uso standalone por CLI (sin Kiro):
 
 ```bash
 python3 scripts/watch.py "https://youtu.be/dQw4w9WgXcQ"
-python3 scripts/watch.py ./local-clip.mp4 --fps 1 --max-frames 40
-python3 scripts/watch.py "<url>" --skip-transcript        # frames only
-python3 scripts/watch.py "<url>" --cookies-from-browser chrome   # login-gated
+python3 scripts/watch.py ./clip-local.mp4 --fps 1 --max-frames 40
+python3 scripts/watch.py "<url>" --skip-transcript              # solo frames
+python3 scripts/watch.py "<url>" --cookies-from-browser chrome  # con login
 ```
 
-Output goes to `./.kiro-watch/<slug>/` with a `frames/` folder and a JSON
-manifest printed to stdout.
+| Flag | Default | Descripción |
+| :--- | :--- | :--- |
+| `--fps` | `0.5` | Fotogramas por segundo a muestrear (0.5 = uno cada 2 s) |
+| `--max-frames` | `60` | Tope de fotogramas |
+| `--model` | `base` | Tamaño Whisper: `tiny`\|`base`\|`small`\|`medium`\|`large` |
+| `--cookies-from-browser` | — | Lee cookies para videos con login (`chrome`, `safari`…) |
+| `--skip-transcript` | off | Solo extrae frames |
+| `-o`, `--output-dir` | `./.kiro-watch/<slug>` | Dónde escribir la salida |
 
-## Options
+## `$ cat stack.yaml`
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--fps` | `0.5` | Frames per second to sample (0.5 = one frame every 2s) |
-| `--max-frames` | `60` | Cap on number of frames |
-| `--model` | `base` | Whisper size: `tiny`\|`base`\|`small`\|`medium`\|`large` |
-| `--cookies-from-browser` | — | Read cookies for login-gated videos (`chrome`, `safari`, …) |
-| `--skip-transcript` | off | Only extract frames |
-| `-o`, `--output-dir` | `./.kiro-watch/<slug>` | Where to write output |
+```yaml
+pipeline: Python >= 3.9
+descarga:  yt-dlp (~1800 sitios)
+frames:    ffmpeg (JPEG muestreados, reescalados a 768px)
+audio:     ffmpeg (WAV mono 16 kHz) -> borrado tras transcribir
+transcrip: mlx-whisper (Apple Silicon) | openai-whisper (CPU)
+interfaz:  servidor MCP stdio (tool: watch_video) + CLI
+```
 
-## How transcription stays local
-
-On Apple Silicon the setup installs `mlx-whisper`, which runs on-device via the
-Neural Engine. Everywhere else it installs `openai-whisper` (CPU). The audio is
-extracted to a temporary 16kHz mono WAV, transcribed, and the WAV is deleted —
-only the text is kept.
-
-## Tests
+## `$ ./test`
 
 ```bash
 python3 -m pytest tests/ -v
 ```
 
-## License
+## `$ cat CREDITS`
 
-MIT — see [LICENSE](LICENSE). Built for the Kiro community.
+- Idea del patrón "perception layer" inspirada en los plugins `watch` de Claude Code (p. ej. [mathiaschu/watch](https://github.com/mathiaschu/watch)), adaptada a Kiro: acá el modelo que mira es Kiro, no una API externa.
+- Autoría de este proyecto: Sam Wilkie.
+
+## `$ cat LICENSE`
+
+MIT. Consultá [LICENSE](LICENSE). Hecho para la comunidad de Kiro.
